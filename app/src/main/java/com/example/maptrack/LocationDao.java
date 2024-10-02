@@ -15,5 +15,7 @@ public interface LocationDao {
     @Query("SELECT * FROM locations ORDER BY timestamp DESC LIMIT 1")
     LocationEntity getLastLocationEntity();
 
+    @Query("SELECT COUNT(*) FROM locations")
+    int getLocationCount();
 }
 

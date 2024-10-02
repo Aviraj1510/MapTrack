@@ -91,12 +91,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 for (Location location : locationResult.getLocations()) {
                     if (location != null) {
                         LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-                        runOnUiThread(() -> {
-                            mMap.addMarker(new MarkerOptions().position(currentLatLng).title("Current Location"));
-                            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15));
-                        });
 
-                        // Get address from Geocoder
                         Geocoder geocoder = new Geocoder(MapsActivity.this);
                         try {
                             List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
@@ -108,22 +103,34 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     LocationEntity lastSavedLocationEntity = locationDao.getLastLocationEntity();
 
                                     if (lastSavedLocationEntity != null) {
-                                        // Create a Location object for distance calculation
                                         Location lastSavedLocation = new Location("lastLocation");
-                                        Log.e("LastLocation", "Location" +  lastSavedLocation);
                                         lastSavedLocation.setLatitude(lastSavedLocationEntity.getLatitude());
                                         lastSavedLocation.setLongitude(lastSavedLocationEntity.getLongitude());
 
-                                        // Calculate distance from the last saved location
                                         float distanceInMeters = location.distanceTo(lastSavedLocation);
 
-                                        // If distance is more than 5 km, save the new location
-                                        if (distanceInMeters > 5000) {
+                                        if (distanceInMeters > 1) {
                                             insertLocationToDatabase(locationName, location.getLatitude(), location.getLongitude());
+
+                                            // Add numbered marker
+                                            int locationCount = locationDao.getLocationCount();
+                                            runOnUiThread(() -> {
+                                                mMap.addMarker(new MarkerOptions().position(currentLatLng)
+                                                        .title("Location " + locationCount + ": " + locationName)
+                                                        .snippet("Location " + locationCount));
+                                                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15));
+                                            });
                                         }
                                     } else {
-                                        // If no previous location exists, save the current one
                                         insertLocationToDatabase(locationName, location.getLatitude(), location.getLongitude());
+
+                                        // Add marker for the first location
+                                        runOnUiThread(() -> {
+                                            mMap.addMarker(new MarkerOptions().position(currentLatLng)
+                                                    .title("Location 1: " + locationName)
+                                                    .snippet("Location 1"));
+                                            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15));
+                                        });
                                     }
                                 });
                             }
@@ -133,12 +140,20 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     }
                 }
             }
+
         };
     }
 
     private void insertLocationToDatabase(String locationName, double latitude, double longitude) {
         executor.execute(() -> {
-            LocationEntity locationEntity = new LocationEntity(locationName, latitude, longitude, System.currentTimeMillis());
+            // Get the current count of locations in the database
+            int locationCount = locationDao.getLocationCount();
+
+            // Increment location number by 1
+            int locationNumber = locationCount + 1;
+
+            // Insert the new location with the location number
+            LocationEntity locationEntity = new LocationEntity(locationName, latitude, longitude, System.currentTimeMillis(), locationNumber);
             locationDao.insert(locationEntity);
         });
     }
