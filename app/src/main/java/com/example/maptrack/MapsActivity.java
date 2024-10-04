@@ -5,10 +5,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.core.app.ActivityCompat;
 
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
 import android.util.Log;
@@ -71,6 +73,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         checkPermissions();
         searchView();
+        startForegroundService();
     }
 
     private void setupLocationRequest() {
@@ -79,6 +82,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         locationRequest.setFastestInterval(2000);
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
     }
+
+    private boolean firstLocationAdded = false;
 
     private void initializeLocationCallback() {
         locationCallback = new LocationCallback() {
@@ -100,7 +105,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                                 executor.execute(() -> {
                                     LocationEntity lastSavedLocationEntity = locationDao.getLastLocationEntity();
-                                    if (lastSavedLocationEntity != null) {
+
+                                    // If this is the first location update, add the first marker
+                                    if (!firstLocationAdded) {
+                                        firstLocationAdded = true;
+                                        insertLocationToDatabase(locationName, location.getLatitude(), location.getLongitude());
+                                        runOnUiThread(() -> {
+                                            mMap.addMarker(new MarkerOptions().position(currentLatLng)
+                                                    .title("Location 1: " + locationName)
+                                                    .snippet("Location 1"));
+                                            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15));
+                                        });
+                                    } else if (lastSavedLocationEntity != null) {
                                         Location lastSavedLocation = new Location("lastLocation");
                                         lastSavedLocation.setLatitude(lastSavedLocationEntity.getLatitude());
                                         lastSavedLocation.setLongitude(lastSavedLocationEntity.getLongitude());
@@ -117,14 +133,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                                                 mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15));
                                             });
                                         }
-                                    } else {
-                                        insertLocationToDatabase(locationName, location.getLatitude(), location.getLongitude());
-                                        runOnUiThread(() -> {
-                                            mMap.addMarker(new MarkerOptions().position(currentLatLng)
-                                                    .title("Location 1: " + locationName)
-                                                    .snippet("Location 1"));
-                                            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15));
-                                        });
                                     }
                                 });
                             }
@@ -136,6 +144,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         };
     }
+
 
     private void insertLocationToDatabase(String locationName, double latitude, double longitude) {
         executor.execute(() -> {
@@ -266,9 +275,23 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 if (locationGranted && storageGranted) {
                     startLocationUpdates();
                 } else {
-                    Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show();
+
                 }
             }
         }
+
+    }
+
+    private void startForegroundService() {
+        Intent serviceIntent = new Intent(this, LocationForegroundService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent);
+        } else {
+            startService(serviceIntent);
+        }
+    }
+    private void stopForegroundService() {
+        Intent serviceIntent = new Intent(this, LocationForegroundService.class);
+        stopService(serviceIntent);
     }
 }
