@@ -36,4 +36,18 @@
         app:iconifiedByDefault="false"
         app:queryHint="Search Here" />
 
+    <Button
+        android:id="@+id/SaveData"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/idSearchView"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="310dp"
+        android:layout_marginTop="592dp"
+        android:layout_marginEnd="13dp"
+        android:layout_marginBottom="34dp"
+        android:text="Save" />
+
 </RelativeLayout>

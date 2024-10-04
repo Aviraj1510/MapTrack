@@ -4,6 +4,8 @@ import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
 
+import java.util.List;
+
 @Dao
 public interface LocationDao {
     @Insert
@@ -17,5 +19,8 @@ public interface LocationDao {
 
     @Query("SELECT COUNT(*) FROM locations")
     int getLocationCount();
+
+    @Query("SELECT * FROM locations ORDER BY timestamp ASC")
+    List<LocationEntity> getAllLocations();
 }
 

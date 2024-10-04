@@ -8,7 +8,7 @@ import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
-@Database(entities = {LocationEntity.class}, version = 2)
+@Database(entities = {LocationEntity.class}, version = 4)
 public abstract class LocationDatabase extends RoomDatabase {
     private static LocationDatabase instance;
 
