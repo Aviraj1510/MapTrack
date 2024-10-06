@@ -70,9 +70,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         initializeLocationCallback();
 
         btnSave.setOnClickListener(v -> exportDatabaseToFile());
-
-        checkPermissions();
         searchView();
+        checkPermissions();
         startForegroundService();
     }
 
@@ -164,21 +163,38 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                String location = searchView.getQuery().toString();
-                if (location != null && !location.equals("")) {
-                    Geocoder geocoder = new Geocoder(MapsActivity.this);
-                    try {
-                        List<Address> addressList = geocoder.getFromLocationName(location, 1);
-                        if (addressList != null && !addressList.isEmpty()) {
-                            Address address = addressList.get(0);
-                            LatLng latLng = new LatLng(address.getLatitude(), address.getLongitude());
-                            runOnUiThread(() -> {
-                                mMap.addMarker(new MarkerOptions().position(latLng).title(location));
-                            });
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                // Get the search query
+                String location = searchView.getQuery().toString().trim();
+
+                // Ensure the query is not empty
+                if (location == null || location.isEmpty()) {
+                    Toast.makeText(MapsActivity.this, "Please enter a location", Toast.LENGTH_SHORT).show();
+                    return false;
+                }
+
+                Geocoder geocoder = new Geocoder(MapsActivity.this);
+                try {
+                    // Fetch the addresses from the geocoder
+                    List<Address> addressList = geocoder.getFromLocationName(location, 1);
+
+                    // Check if the address list is empty or null
+                    if (addressList != null && !addressList.isEmpty()) {
+                        Address address = addressList.get(0);
+                        LatLng latLng = new LatLng(address.getLatitude(), address.getLongitude());
+
+                        // Move the camera and add a marker for the searched location
+                        runOnUiThread(() -> {
+                            mMap.addMarker(new MarkerOptions().position(latLng).title(location));
+                            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
+                        });
+                    } else {
+                        // Address list is empty or null
+                        Toast.makeText(MapsActivity.this, "No location found. Please try again.", Toast.LENGTH_SHORT).show();
                     }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    // Display an error message if geocoder fails
+                    runOnUiThread(() -> Toast.makeText(MapsActivity.this, "Failed to get location. Check your internet connection.", Toast.LENGTH_LONG).show());
                 }
                 return false;
             }
@@ -189,6 +205,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
     }
+
 
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
@@ -242,7 +259,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     writer.write("Location " + location.getLocationNumber() + ": "
                             + location.getAddress() + ", Latitude: "
                             + location.getLatitude() + ", Longitude: "
-                            + location.getLongitude() + "\n");
+                            + location.getLongitude() + ", Time: "
+                            + location.getTimestamp() + "\n");
                 }
                 runOnUiThread(() -> Toast.makeText(MapsActivity.this, "Data exported to " + file.getAbsolutePath(), Toast.LENGTH_LONG).show());
             } catch (IOException e) {
