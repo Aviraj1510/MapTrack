@@ -45,9 +45,11 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+
     implementation ("com.google.android.gms:play-services-maps:19.0.0")
-    implementation ("com.google.android.gms:play-services-maps:18.0.0")
     implementation ("com.google.android.gms:play-services-location:21.3.0")
+
+
 
     // Room Database
     implementation ("androidx.room:room-runtime:2.6.1")

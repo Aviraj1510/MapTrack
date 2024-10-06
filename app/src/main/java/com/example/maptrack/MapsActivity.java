@@ -78,6 +78,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void setupLocationRequest() {
         locationRequest = LocationRequest.create();
+        locationRequest.setSmallestDisplacement(100); // 100 meters
         locationRequest.setInterval(5000);
         locationRequest.setFastestInterval(2000);
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
@@ -123,7 +124,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                                         float distanceInMeters = location.distanceTo(lastSavedLocation);
 
-                                        if (distanceInMeters > 1) {
+                                        if (distanceInMeters > 5000) {
                                             insertLocationToDatabase(locationName, location.getLatitude(), location.getLongitude());
                                             int locationCount = locationDao.getLocationCount();
                                             runOnUiThread(() -> {
@@ -151,8 +152,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             Log.d("MapsActivity", "Inserting location: " + locationName);
             int locationCount = locationDao.getLocationCount();
             int locationNumber = locationCount + 1;
-
-            LocationEntity locationEntity = new LocationEntity(locationName, latitude, longitude, System.currentTimeMillis(), locationNumber);
+            long timestamp = System.currentTimeMillis();
+            LocationEntity locationEntity = new LocationEntity(locationName, latitude, longitude, timestamp, locationNumber);
             locationDao.insert(locationEntity);
 
             Log.d("MapsActivity", "Location inserted: " + locationName);
@@ -173,7 +174,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                             LatLng latLng = new LatLng(address.getLatitude(), address.getLongitude());
                             runOnUiThread(() -> {
                                 mMap.addMarker(new MarkerOptions().position(latLng).title(location));
-                                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 10));
                             });
                         }
                     } catch (IOException e) {
